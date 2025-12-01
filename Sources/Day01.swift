@@ -4,26 +4,48 @@ struct Day01: AdventDay {
   // Save your data in a corresponding text file in the `Data` directory.
   var data: String
 
-  // Splits input data into its component parts and convert from string.
-  var entities: [[Int]] {
-    data.split(separator: "\n").map {
-      $0.split(separator: " ").compactMap { Int($0) }
-    }
+  var turns: [Int] {
+    return data.split(separator: "\n").compactMap { Int($0.starts(with: "L") ? "-\($0.dropFirst())" : "\($0.dropFirst())") }
   }
 
+  // Replace this with your solution for the first part of the day's challenge.
   func part1() -> Any {
-    let l1 = entities.map { $0[0] }.sorted()
-    let l2 = entities.map { $0[1] }.sorted()
-
-    return l1.indices.reduce(0) { $0 + abs(l1[$1] - l2[$1]) }
+    var position = 50
+    var zerosVisited = 0
+    
+    for turn in turns {
+      // handle negative modulo in swift
+      let newPos = ((position + turn) % 100 + 100) % 100
+      
+      if newPos == 0 {
+        zerosVisited += 1
+      }
+      
+      position = newPos
+    }
+    
+    return zerosVisited
   }
 
+  // Replace this with your solution for the second part of the day's challenge.
   func part2() -> Any {
-    let l1 = entities.map { $0[0] }
-    let l2 = entities.map { $0[1] }
+    var position = 50
+    var zerosVisited = 0
 
-    let frequencyL2 = l2.reduce(into: [:]) { $0[$1, default: 0] += 1 }
+    for turn in turns {
+      let increment = turn > 0 ? 1 : -1  // +1 for R (right), -1 for L (left).
+      let clicks = abs(turn)
 
-    return l1.reduce(0) { $0 + ($1 * frequencyL2[$1, default: 0]) }
+      for _ in 0..<clicks {
+        // handle negative modulo in swift
+        position = ((position + increment) % 100 + 100) % 100
+
+        if position == 0 {
+          zerosVisited += 1
+        }
+      }
+    }
+
+    return zerosVisited
   }
 }
