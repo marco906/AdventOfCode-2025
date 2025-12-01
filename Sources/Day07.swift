@@ -1,5 +1,3 @@
-import Algorithms
-
 struct Day07: AdventDay {
   init(data: String) {
     self.equations = data.split(separator: "\n").map {

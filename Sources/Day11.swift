@@ -1,5 +1,3 @@
-import Algorithms
-
 struct Day11: AdventDay {
   init(data: String) {
     self.stones = data.split(separator: " ").map { Int(String($0)) ?? 0 }

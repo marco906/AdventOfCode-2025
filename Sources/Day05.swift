@@ -1,5 +1,3 @@
-import Algorithms
-
 struct Day05: AdventDay {
   init(data: String) {
     let dataComponents = data.split(separator: "\n\n").map { String($0) }

@@ -1,5 +1,3 @@
-import Algorithms
-
 struct Day04: AdventDay {
   init(data: String) {
     self.matrix = data.split(separator: "\n").map { $0.map { String($0) } }
