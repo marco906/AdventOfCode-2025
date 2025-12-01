@@ -1,4 +1,3 @@
-import ArgumentParser
 
 // Add each new day implementation to this array:
 let allChallenges: [any AdventDay] = [
@@ -6,15 +5,23 @@ let allChallenges: [any AdventDay] = [
 ]
 
 @main
-struct AdventOfCode: AsyncParsableCommand {
-  @Argument(help: "The day of the challenge. For December 1st, use '1'.")
+struct AdventOfCode {
+  //@Argument(help: "The day of the challenge. For December 1st, use '1'.")
   var day: Int?
 
-  @Flag(help: "Benchmark the time taken by the solution")
+  // @Flag(help: "Benchmark the time taken by the solution")
   var benchmark: Bool = false
 
-  @Flag(help: "Run all the days available")
+  // @Flag(help: "Run all the days available")
   var all: Bool = false
+  
+  public static func main() async {
+    do {
+      try await AdventOfCode().run()
+    } catch {
+      print(error)
+    }
+  }
 
   /// The selected day, or the latest day if no selection is provided.
   var selectedChallenge: any AdventDay {
@@ -23,12 +30,16 @@ struct AdventOfCode: AsyncParsableCommand {
         if let challenge = allChallenges.first(where: { $0.day == day }) {
           return challenge
         } else {
-          throw ValidationError("No solution found for day \(day)")
+          throw ValidationError.noSolution
         }
       } else {
         return latestChallenge
       }
     }
+  }
+  
+  enum ValidationError: Swift.Error {
+    case noSolution
   }
 
   /// The latest challenge in `allChallenges`.
