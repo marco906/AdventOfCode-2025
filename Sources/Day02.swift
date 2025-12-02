@@ -1,3 +1,5 @@
+import Foundation
+
 struct Day02: AdventDay {
   // Save your data in a corresponding text file in the `Data` directory.
   var data: String
@@ -14,33 +16,48 @@ struct Day02: AdventDay {
     for range in ranges {
       let start = range[0]
       let end = range[1]
-      let endNumber = Int(end) ?? 0
-
+      let startNumber = Int(start)!
+      let endNumber = Int(end)!
+      
       let isEven = start.count % 2 == 0
-      var halfLength = isEven ? start.count / 2 : (start.count + 1) / 2
-
-      var nextHalf = isEven ? Int(String(start.prefix(halfLength)))! : 10 ^ (halfLength - 1)
+      let halfLength = isEven ? start.count / 2 : (start.count + 1) / 2
+      
+      var nextHalf = isEven ? Int(String(start.prefix(halfLength)))! : Int(pow(10, Double(halfLength - 1)))
       var nextNumber = Int("\(nextHalf)\(nextHalf)")!
       
-      print("\(start), \(end)")
-
+      if nextNumber < startNumber {
+        nextHalf += 1
+        nextNumber = Int("\(nextHalf)\(nextHalf)")!
+      }
+      
       while nextNumber <= endNumber {
-        print(nextNumber)
         invalidNumbersSum += nextNumber
         nextHalf += 1
-        if String(nextHalf).count > halfLength {
-          halfLength += 1
-          nextHalf = 10 ^ (halfLength - 1)
-        }
         nextNumber = Int("\(nextHalf)\(nextHalf)")!
-        
       }
     }
-
+    
     return invalidNumbersSum
   }
-
+  
   func part2() -> Any {
-    return 0
+    var invalidNumbersSum = 0
+    for range in ranges {
+      let start = range[0]
+      let end = range[1]
+      let startNumber = Int(start)!
+      let endNumber = Int(end)!
+      
+      for n in startNumber...endNumber {
+        let numberString = String(n)
+        // substring pattern check with double string overlap
+        let s = (numberString + numberString).dropFirst().dropLast()
+        if s.contains(numberString) {
+          invalidNumbersSum += n
+        }
+      }
+    }
+    
+    return invalidNumbersSum
   }
 }
