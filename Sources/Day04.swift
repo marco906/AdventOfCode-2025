@@ -1,101 +1,72 @@
 struct Day04: AdventDay {
   init(data: String) {
-    self.matrix = data.split(separator: "\n").map { $0.map { String($0) } }
+    self.map = data.split(separator: "\n").map { $0.map { String($0) } }
+    numRows = map.count
+    numCols = map[0].count
   }
   
-  var matrix: [[String]]
+  var map: [[String]] = []
+  var numRows: Int
+  var numCols: Int
   
-  var rows: [String] {
-    matrix.map { $0.joined() }
+  struct Position: Hashable {
+    let x: Int
+    let y: Int
   }
   
-  var columns: [String] {
-    guard let first = matrix.first else { return [] }
-    let indices = first.indices
-    
-    return indices.map { index in
-      matrix.map { $0[index] }.joined()
-    }
+  func isRoll(_ position: Position, map: [[String]]) -> Bool {
+    guard position.x >= 0 && position.y >= 0 else { return false }
+    guard position.x < numCols && position.y < numRows else { return false }
+    return map[position.y][position.x] == "@"
   }
   
-  var diagonals: [String] {
-    guard !matrix.isEmpty && matrix.count == matrix[0].count else {
-        return []
-    }
-    
-    let size = matrix.count
-    var diagonals = [String]()
-    
-    // Downward diagonals
-    for d in -(size - 1)..<size {
-        var diagonal = [String]()
-        for i in 0..<size {
-            let j = i + d
-            if j >= 0 && j < size {
-                diagonal.append(matrix[i][j])
-            }
+  var liftableRolls = 0
+  
+  func getLiftableRolls(remove: Bool, map: inout [[String]]) -> Int {
+    var liftableRolls: [Position] = []
+    for rowIndex in 0..<numRows {
+      for columnIndex in 0..<numCols{
+        
+        let current = Position(x: columnIndex, y: rowIndex)
+        guard isRoll(current, map: map) else { continue }
+        let top = Position(x: columnIndex - 1, y: rowIndex)
+        let topLeft = Position(x: columnIndex - 1, y: rowIndex - 1)
+        let topRight = Position(x: columnIndex - 1, y: rowIndex + 1)
+        
+        let bottom = Position(x: columnIndex + 1, y: rowIndex)
+        let bottomLeft = Position(x: columnIndex + 1, y: rowIndex - 1)
+        let bottomRight = Position(x: columnIndex + 1, y: rowIndex + 1)
+        
+        let left = Position(x: columnIndex, y: rowIndex - 1)
+        let right = Position(x: columnIndex, y: rowIndex + 1)
+        
+        let adjacentRolls = [top, topLeft, topRight, bottom, bottomLeft, bottomRight, right, left].filter{ isRoll($0, map: map) }.count
+        if adjacentRolls < 4 {
+          liftableRolls += [current]
         }
-      diagonals.append(diagonal.joined())
-    }
-    
-    // Upward diagonals
-    for d in 0..<(2 * size - 1) {
-        var diagonal = [String]()
-        for i in 0..<size {
-            let j = d - i
-            if j >= 0 && j < size {
-                diagonal.append(matrix[i][j])
-            }
-        }
-      diagonals.append(diagonal.joined())
-    }
-    
-    return diagonals
-  }
-  
-  func isXmasDiagonal(_ vector: String) -> Bool {
-    let pattern = /MAS|SAM/
-    
-    return vector.wholeMatch(of: pattern) != nil
-  }
-  
-  func part1() -> Any {
-    let pattern = /XMAS/
-    let patternReverse = /SAMX/
-    
-    var count = 0
-    
-    for vector in rows + columns + diagonals {
-      count += vector.matches(of: pattern).count
-      count += vector.matches(of: patternReverse).count
-    }
-    
-    return count
-  }
-  
-  func part2() -> Any {
-    var res = 0
-    
-    for rowIndex in 1..<matrix.count - 1 {
-      for columnIndex in 1..<matrix[rowIndex].count - 1 {
-        let current = matrix[rowIndex][columnIndex]
-        guard current == "A" else { continue }
-        let topLeft = matrix[rowIndex - 1][columnIndex - 1]
-        let bottomRight = matrix[rowIndex + 1][columnIndex + 1]
-        
-        let diagonal1 = [topLeft, current, bottomRight].joined()
-        guard isXmasDiagonal(diagonal1) else { continue }
-        
-        let topRight = matrix[rowIndex - 1][columnIndex + 1]
-        let bottomLeft = matrix[rowIndex + 1][columnIndex - 1]
-        
-        let diagonal2 = [topRight, current, bottomLeft].joined()
-        guard isXmasDiagonal(diagonal2) else { continue }
-        
-        res += 1
       }
     }
     
-    return res
+    if remove {
+      for pos in liftableRolls {
+        map[pos.y][pos.x] = "."
+      }
+      
+      if liftableRolls.count != 0 {
+        return liftableRolls.count + getLiftableRolls(remove: true, map: &map)
+      }
+    }
+    
+    return liftableRolls.count
+  }
+  
+  func part1() -> Any {
+    var map = self.map
+    return getLiftableRolls(remove: false, map: &map)
+  }
+  
+  func part2() -> Any {
+    var map = self.map
+    return getLiftableRolls(remove: true, map: &map)
   }
 }
