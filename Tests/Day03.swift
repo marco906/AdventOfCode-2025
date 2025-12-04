@@ -1,3 +1,9 @@
+import Testing
+
+@testable import AdventOfCode
+
+// Make a copy of this file for every day to ensure the provided smoke tests
+// pass.
 struct Day03Tests {
   // Smoke test data provided in the challenge question
   let testData = """
