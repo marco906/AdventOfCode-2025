@@ -2,38 +2,34 @@ struct Day03: AdventDay {
   // Save your data in a corresponding text file in the `Data` directory.
   var data: String
   
-  func performInstructions(_ memory: String) -> Int {
-    var res = 0
-    let pattern = /mul\((\d{1,3}),(\d{1,3})\)/
-    
-    for match in memory.matches(of: pattern) {
-      res += (Int(match.1) ?? 0) * (Int(match.2) ?? 0)
+  var batteryRows: [[Int]] {
+    data.split(separator: "\n").map { $0.map { Int(String($0))! } }
+  }
+  
+  func getJoltage(digits: Int) -> Int {
+    var sum = 0
+    for row in batteryRows {
+      var joltage = ""
+      var modRow = row
+      var currentDigit = digits
+      while currentDigit > 0 {
+        let number = modRow.dropLast(currentDigit - 1).max()!
+        let index = modRow.firstIndex(of: number)!
+        let nextIndex = min(modRow.count - 1, index + 1)
+        modRow = Array(modRow[nextIndex...])
+        currentDigit -= 1
+        joltage += String(number)
+      }
+      sum += Int(joltage)!
     }
-    
-    return res
+    return sum
   }
   
   func part1() -> Any {
-    return performInstructions(data)
+    return getJoltage(digits: 2)
   }
   
   func part2() -> Any {
-    let dontPattern = /don't\(\)/
-    let doPattern = /do\(\)/
-    
-    var modData = ""
-    let parts = data.split(separator: dontPattern, omittingEmptySubsequences: false).map { String($0) }
-    
-    for part in parts {
-      if let doMatchRange = part.firstMatch(of: doPattern)?.range {
-        modData += part[doMatchRange.upperBound...]
-      } else {
-        if modData.isEmpty {
-          modData += part
-        }
-      }
-    }
-    
-    return performInstructions(modData)
+    getJoltage(digits: 12)
   }
 }
