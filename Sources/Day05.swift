@@ -1,69 +1,44 @@
 struct Day05: AdventDay {
   init(data: String) {
     let dataComponents = data.split(separator: "\n\n").map { String($0) }
-    self.rules = dataComponents[0].split(separator: "\n").map { $0.components(separatedBy: "|").compactMap { Int($0) } }
-    self.updates = dataComponents[1].split(separator: "\n").map { $0.components(separatedBy: ",").compactMap { Int($0) } }
+    self.rangesFresh = dataComponents[0].split(separator: "\n").map { $0.components(separatedBy: "-").map { Int($0)! } }
+    self.available = dataComponents[1].split(separator: "\n").map { Int($0)! }
   }
   
-  var rules: [[Int]]
-  var updates: [[Int]]
+  var rangesFresh: [[Int]]
+  var available: [Int]
   
   func part1() -> Any {
-    var res = 0
-    let rulesDict = rules.reduce(into: [Int : Set<Int>]()) { $0[$1[1], default: []].insert($1[0]) }
+    var count = 0
     
-    updateLoop: for update in updates {
-      var pagesAfter = Set(update)
-
-      for page in update {
-        pagesAfter.remove(page)
-        let pagesRequiredBefore = rulesDict[page] ?? []
-
-        if pagesRequiredBefore.isEmpty || pagesAfter.isDisjoint(with: pagesRequiredBefore) {
-          continue
-        } else {
-          continue updateLoop
+    outerloop: for a in available {
+      for range in rangesFresh {
+        if range[0] <= a && a <= range[1] {
+          count += 1
+          continue outerloop
         }
       }
-      
-      let middleIndex = update.count / 2
-      res += update[middleIndex]
     }
     
-    return res
+    return count
   }
   
   func part2() -> Any {
-    var res = 0
-    let rulesDict = rules.reduce(into: [Int : Set<Int>]()) { $0[$1[1], default: []].insert($1[0]) }
-    
-    for update in updates {
-      let pagesAll = Set(update)
-      var pagesAfter = pagesAll
-      var needsFix = false
-
-      for page in update {
-        pagesAfter.remove(page)
-        let pagesRequiredBefore = rulesDict[page] ?? []
-
-        if pagesRequiredBefore.isEmpty || pagesAfter.isDisjoint(with: pagesRequiredBefore) {
-          continue
-        } else {
-          needsFix = true
-          break
-        }
-      }
-      
-      if needsFix {
-        let fixedUpdate = update.sorted{
-          rulesDict[$1, default: []].intersection(pagesAll).count < rulesDict[$0, default: []].intersection(pagesAll).count
-        }
-        
-        let middleIndex = fixedUpdate.count / 2
-        res += fixedUpdate[middleIndex]
+    let sorted = rangesFresh.sorted { $0[0] < $1[0] }
+    var start = sorted[0][0]
+    var end = sorted[0][1]
+    var count = 0
+    for range in sorted.dropFirst() {
+      if range[0] <= end + 1 {
+        end = max(end, range[1])
+      } else {
+        count += end - start + 1
+        start = range[0]
+        end = range[1]
       }
     }
-    
-    return res
+    count += end - start + 1
+    return count
   }
 }
+
