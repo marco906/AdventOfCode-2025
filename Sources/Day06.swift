@@ -26,31 +26,20 @@ struct Day06: AdventDay {
     var currentNumbers: [Int] = []
     var currentOperator: Character? = nil
     
-    for colIndex in 0..<mapAligned[0].count {
-      // concatenate digits top-to-bottom
+    for colIndex in 0..<operatorRow.count {
       let verticalNumber = numberRows.map { String($0[colIndex]) }.filter { $0 != " " }.joined()
       
       if !verticalNumber.isEmpty {
-        if currentOperator == nil {
-          currentOperator = operatorRow[colIndex]
-        }
+        currentOperator = currentOperator ?? operatorRow[colIndex]
         currentNumbers.append(Int(verticalNumber)!)
-
-      } else {
-        // Empty column: process previous group
-        if !currentNumbers.isEmpty {
-          let isMultiply = currentOperator == "*"
-          sum += isMultiply ? currentNumbers.reduce(1, *) : currentNumbers.reduce(0, +)
-          currentNumbers = []
-          currentOperator = nil
-        }
       }
-    }
-    
-    // Handle last group
-    if !currentNumbers.isEmpty {
-      let isMultiply = currentOperator == "*"
-      sum += isMultiply ? currentNumbers.reduce(1, *) : currentNumbers.reduce(0, +)
+      
+      if verticalNumber.isEmpty || colIndex == operatorRow.count - 1 {
+        let isMultiply = currentOperator == "*"
+        sum += isMultiply ? currentNumbers.reduce(1, *) : currentNumbers.reduce(0, +)
+        currentNumbers = []
+        currentOperator = nil
+      }
     }
     
     return sum
