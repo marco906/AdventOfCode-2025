@@ -20,8 +20,6 @@ struct Day04: AdventDay {
     return map[position.y][position.x] == "@"
   }
   
-  var liftableRolls = 0
-  
   func getLiftableRolls(remove: Bool, map: inout [[String]]) -> Int {
     var liftableRolls: [Position] = []
     for rowIndex in 0..<numRows {

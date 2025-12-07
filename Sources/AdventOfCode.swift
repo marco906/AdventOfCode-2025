@@ -1,7 +1,7 @@
 
 // Add each new day implementation to this array:
 let allChallenges: [any AdventDay] = [
-  Day06(),
+  Day07(),
 ]
 
 @main
@@ -10,7 +10,7 @@ struct AdventOfCode {
   var day: Int?
 
   // @Flag(help: "Benchmark the time taken by the solution")
-  var benchmark: Bool = false
+  var benchmark: Bool = true
 
   // @Flag(help: "Run all the days available")
   var all: Bool = false
