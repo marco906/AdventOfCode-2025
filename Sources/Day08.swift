@@ -1,116 +1,89 @@
 struct Day08: AdventDay {
   init(data: String) {
-    self.map = data.split(separator: "\n").map { $0.map { String($0) } }
-    numRows = map.count
-    numCols = map[0].count
+    self.boxes = data.split(separator: "\n").map { $0.split(separator: ",").map { Int(String($0))!} }.map { Position(x: $0[0], y: $0[1], z: $0[2]) }
   }
   
-  var map: [[String]] = []
-  var numRows: Int
-  var numCols: Int
+  var boxes: [Position] = []
   
   struct Position: Hashable {
-    var x: Int
-    var y: Int
+    let x: Int
+    let y: Int
+    let z: Int
   }
   
-  func getAntennas() -> [String: [Position]] {
-    var res = [String: [Position]]()
-    for y in 0..<map.count {
-      for x in 0..<map[y].count {
-        let value = map[y][x]
-        if value != "." {
-          res[value, default: []].append(Position(x: x, y: y))
-        }
-      }
+  class Circuit {
+    let pos: Position
+    var parent: Circuit?
+    var size: Int = 1
+    
+    init(pos: Position) {
+      self.pos = pos
     }
     
-    return res
-  }
-  
-  func isInBounds(_ position: Position) -> Bool {
-    guard position.x >= 0 && position.y >= 0 else { return false }
-    guard position.x < numCols && position.y < numRows else { return false }
-    return true
-  }
-  
-  func gcd(_ a: Int, _ b: Int) -> Int {
-    let remainder = abs(a) % abs(b)
-    if remainder != 0 {
-      return gcd(abs(b), remainder)
-    } else {
-      return abs(b)
+    func getRoot() -> Circuit {
+      parent?.getRoot() ?? self
     }
+    
+    func connect(with other: Circuit) {
+      let rootA = self.getRoot()
+      let rootB = other.getRoot()
+      guard rootA !== rootB else { return }
+      rootA.parent = rootB
+      rootB.size += rootA.size
+    }
+    
+    func distanceSquared(to other: Circuit) -> Int {
+      let dx = pos.x - other.pos.x
+      let dy = pos.y - other.pos.y
+      let dz = pos.z - other.pos.z
+      return dx*dx + dy*dy + dz*dz
+    }
+  }
+  
+  func getClosestPairs(circuits: [Circuit]) -> [(Circuit, Circuit, Int)] {
+    var pairs: [(Circuit, Circuit, Int)] = []
+    for i in 0..<circuits.count {
+      for j in i+1..<circuits.count {
+        let dist = circuits[i].distanceSquared(to: circuits[j])
+        pairs.append((circuits[i], circuits[j], dist))
+      }
+    }
+    pairs.sort{ $0.2 < $1.2 }
+    return pairs
   }
   
   func part1() async -> Any {
-    var antiNodes: Set<Position> = []
-    let antennas = getAntennas()
-    
-    for freqPositions in antennas.values {
-      var postions = freqPositions
-      
-      while !postions.isEmpty {
-        let position = postions.removeLast()
-        
-        for partner in postions {
-          var antiNodesOfPair: [Position] = []
-          let dx = partner.x - position.x
-          let dy = partner.y - position.y
-          
-          antiNodesOfPair += [
-            Position(x: position.x - dx, y: position.y - dy),
-            Position(x: partner.x + dx, y: partner.y + dy),
-          ]
-          
-          antiNodesOfPair.filter { isInBounds($0) }.forEach { antiNodes.insert($0) }
-        }
-      }
+    let iterations = 1000
+    let circuits = boxes.map { Circuit(pos: $0) }
+    let pairs = getClosestPairs(circuits: circuits)
+
+    for (a, b, _) in pairs.prefix(iterations) {
+      a.connect(with: b)
     }
     
-    return antiNodes.count
+    let sizes = circuits.filter { $0.parent == nil }.map { $0.size }.sorted(by: >)
+    return sizes.prefix(3).reduce(1, *)
   }
   
   func part2() async -> Any {
-    var antiNodes: Set<Position> = []
-    let antennas = getAntennas()
+    let circuits = boxes.map { Circuit(pos: $0) }
+    let pairs = getClosestPairs(circuits: circuits)
     
-    for freqPositions in antennas.values {
-      var postions = freqPositions
-      
-      while !postions.isEmpty {
-        let position = postions.removeLast()
+    var lastA: Circuit?
+    var lastB: Circuit?
+    
+    for (a, b, _) in pairs {
+      if a.getRoot() !== b.getRoot() {
+        lastA = a
+        lastB = b
+        a.connect(with: b)
         
-        for partner in postions {
-          let dx = partner.x - position.x
-          let dy = partner.y - position.y
-          
-          // get smallest grid distance vector
-          let gcd = gcd(dx, dy)
-          let dxMin = dx / gcd
-          let dyMin = dy / gcd
-          
-          // move up along vector
-          var antiNodeUp = Position(x: position.x + dxMin, y: position.y + dyMin)
-          while isInBounds(antiNodeUp) {
-            antiNodes.insert(antiNodeUp)
-            antiNodeUp.x += dxMin
-            antiNodeUp.y += dyMin
-          }
-          
-          // move down along vector
-          var antiNodeDown = Position(x: position.x - dxMin, y: position.y - dyMin)
-          while isInBounds(antiNodeDown) {
-            antiNodes.insert(antiNodeDown)
-            antiNodeDown.x -= dxMin
-            antiNodeDown.y -= dyMin
-          }
-          
-          antiNodes.insert(position)
+        if a.getRoot().size == circuits.count {
+          break
         }
       }
     }
     
-    return antiNodes.count
+    return lastA!.pos.x * lastB!.pos.x
   }
 }
