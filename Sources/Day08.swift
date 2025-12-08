@@ -53,7 +53,7 @@ struct Day08: AdventDay {
   }
   
   func part1() async -> Any {
-    let iterations = 1000
+    let iterations = 10
     let circuits = boxes.map { Circuit(pos: $0) }
     let pairs = getClosestPairs(circuits: circuits)
 
