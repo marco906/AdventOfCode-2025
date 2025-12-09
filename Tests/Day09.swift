@@ -1,7 +1,6 @@
 import Testing
 
 @testable import AdventOfCode
-// the Elves would like to find the largest rectangle that uses red tiles for two of its opposite corners. They even have a list of where the red tiles are located in the grid (your puzzle input).
 
 struct Day09Tests {
   // Smoke test data provided in the challenge question

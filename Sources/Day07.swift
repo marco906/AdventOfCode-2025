@@ -15,7 +15,7 @@ struct Day07: AdventDay {
   }
   
   func isSplitter(_ position: Position) -> Bool {
-    return map[position.y][position.x] == "^"
+    map[position.y][position.x] == "^"
   }
 
   func isInBounds(_ position: Position) -> Bool {
@@ -36,6 +36,7 @@ struct Day07: AdventDay {
     return next
   }
   
+  // dfs to get number of branch points (splits)
   func getSplits(pos: Position, visited: inout Set<Position>) -> Int {
     var splits = 0
 
@@ -49,13 +50,14 @@ struct Day07: AdventDay {
     let nextPositions = getNext(pos: pos)
     splits += nextPositions.count > 1 ? 1 : 0
 
-    for position in getNext(pos: pos) {
+    for position in nextPositions{
       splits += getSplits(pos: position, visited: &visited)
     }
     
     return splits
   }
 
+  // dfs with dict cache to get number of paths (timelines)
   func getTimelines(pos: Position, visited: inout [Position: Int]) -> Int {
     var timelines = 0
 

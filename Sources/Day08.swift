@@ -40,7 +40,7 @@ struct Day08: AdventDay {
     }
   }
   
-  func getClosestPairs(circuits: [Circuit]) -> [(Circuit, Circuit, Int)] {
+  func getClosestPairs(circuits: [Circuit]) -> [(Circuit, Circuit)] {
     var pairs: [(Circuit, Circuit, Int)] = []
     for i in 0..<circuits.count {
       for j in i+1..<circuits.count {
@@ -49,19 +49,24 @@ struct Day08: AdventDay {
       }
     }
     pairs.sort{ $0.2 < $1.2 }
-    return pairs
+    return pairs.map{ ($0.0, $0.1) }
   }
   
   func part1() async -> Any {
+    #if DEBUG
     let iterations = 10
+    #else
+    let iterations = 1000
+    #endif
     let circuits = boxes.map { Circuit(pos: $0) }
     let pairs = getClosestPairs(circuits: circuits)
 
-    for (a, b, _) in pairs.prefix(iterations) {
+    for (a, b) in pairs.prefix(iterations) {
       a.connect(with: b)
     }
     
-    let sizes = circuits.filter { $0.parent == nil }.map { $0.size }.sorted(by: >)
+    // Get largest 3 circuits
+    let sizes = circuits.filter{ $0.parent == nil }.map{ $0.size }.sorted(by: >)
     return sizes.prefix(3).reduce(1, *)
   }
   
@@ -72,13 +77,14 @@ struct Day08: AdventDay {
     var lastA: Circuit?
     var lastB: Circuit?
     
-    for (a, b, _) in pairs {
+    for (a, b) in pairs {
       if a.getRoot() !== b.getRoot() {
         lastA = a
         lastB = b
         a.connect(with: b)
         
-        if a.getRoot().size == circuits.count {
+        // check if all connected
+        if b.size == circuits.count {
           break
         }
       }

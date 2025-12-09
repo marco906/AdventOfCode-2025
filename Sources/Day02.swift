@@ -1,12 +1,10 @@
 import Foundation
 
 struct Day02: AdventDay {
-  // Save your data in a corresponding text file in the `Data` directory.
   var data: String
 
-  // Splits input data into its component parts and convert from string.
   var ranges: [[String]] {
-    data.split(separator: ",").map {
+    data.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: ",").map {
       $0.split(separator: "-").map { String($0) }
     }
   }
@@ -50,7 +48,7 @@ struct Day02: AdventDay {
       
       for n in startNumber...endNumber {
         let numberString = String(n)
-        // substring pattern check with double string overlap
+        // Substring pattern check with double string overlap
         let s = (numberString + numberString).dropFirst().dropLast()
         if s.contains(numberString) {
           invalidNumbersSum += n

@@ -30,46 +30,45 @@ struct Day09: AdventDay {
     var verticalEdges: [(x: Int, yMin: Int, yMax: Int)] = []
     var maxArea = 0
     
-    func isInside(_ x: Int, _ y: Int) -> Bool {
+    func isInside(_ pos: Position) -> Bool {
       var count = 0
       for edge in verticalEdges {
-        if edge.x < x && edge.yMin < y && y < edge.yMax {
+        if edge.x < pos.x && edge.yMin < pos.y && pos.y < edge.yMax {
           count += 1
         }
       }
+      // If crossing odd number of edges, point is inside polygon
       return count % 2 == 1
     }
     
-    func isValidRectangle(x1: Int, y1: Int, x2: Int, y2: Int) -> Bool {
+    func isRectangleInsidePolygon(x1: Int, y1: Int, x2: Int, y2: Int) -> Bool {
       let minX = min(x1, x2)
       let maxX = max(x1, x2)
       let minY = min(y1, y2)
       let maxY = max(y1, y2)
       
-      // line or point allowed
+      // line or point from red tiles is always inside
       if minX == maxX || minY == maxY {
         return true
       }
       
-      if !isInside(minX + 1, minY + 1) {
+      if !isInside(Position(x: minX + 1, y: minY + 1)) {
         return false
       }
       
-      // Check horizontal edge cross
+      // Check horizontal edge intersection
       for edge in horizontalEdges {
         if edge.y > minY && edge.y < maxY {
           if edge.xMin < maxX && edge.xMax > minX {
-            // Overlap
             return false
           }
         }
       }
       
-      // Check vertical edge cross
+      // Check vertical edge intersection
       for edge in verticalEdges {
         if edge.x > minX && edge.x < maxX {
           if edge.yMin < maxY && edge.yMax > minY {
-            // Overlap
             return false
           }
         }
@@ -78,7 +77,7 @@ struct Day09: AdventDay {
       return true
     }
 
-    // Get edges
+    // Get polygon edges by connecting all red tiles
     for i in 0..<tiles.count {
       let current = tiles[i]
       let next = tiles[(i + 1) % tiles.count]
@@ -90,12 +89,13 @@ struct Day09: AdventDay {
       }
     }
     
+    // Check all possible rectangles from red tiles if inside polygon
     for i in 0..<tiles.count {
       for j in (i + 1)..<tiles.count {
         let t1 = tiles[i]
         let t2 = tiles[j]
         
-        if isValidRectangle(x1: t1.x, y1: t1.y, x2: t2.x, y2: t2.y) {
+        if isRectangleInsidePolygon(x1: t1.x, y1: t1.y, x2: t2.x, y2: t2.y) {
           let area = (abs(t2.x - t1.x) + 1) * (abs(t2.y - t1.y) + 1)
           maxArea = max(maxArea, area)
         }

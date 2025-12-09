@@ -1,6 +1,14 @@
 
 // Add each new day implementation to this array:
 let allChallenges: [any AdventDay] = [
+  Day01(),
+  Day02(),
+  Day03(),
+  Day04(),
+  Day05(),
+  Day06(),
+  Day07(),
+  Day08(),
   Day09(),
 ]
 
@@ -13,7 +21,7 @@ struct AdventOfCode {
   var benchmark: Bool = true
 
   // @Flag(help: "Run all the days available")
-  var all: Bool = false
+  var all: Bool = true
   
   public static func main() async {
     do {
