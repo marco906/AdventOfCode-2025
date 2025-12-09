@@ -64,9 +64,13 @@ struct AdventOfCode {
         result = .failure(error)
       }
     }
+    
+    let formatted = timing.formatted(
+      .units(allowed: [.seconds], width: .abbreviated, fractionalPart: .show(length: 4)))
+    
     switch result! {
     case .success(let success):
-      print("\(named): \(success)")
+      print("\(named): \(formatted)\t\(success)")
     case .failure(let failure as PartUnimplemented):
       print("Day \(failure.day) part \(failure.part) unimplemented")
     case .failure(let failure):
@@ -83,18 +87,24 @@ struct AdventOfCode {
         try [selectedChallenge]
       }
 
-    for challenge in challenges {
-      print("Executing Advent of Code challenge \(challenge.day)...")
+    var totalTime = Duration.zero
 
-      let timing1 = await run(part: challenge.part1, named: "Part 1")
-      let timing2 = await run(part: challenge.part2, named: "Part 2")
+    for challenge in challenges {
+      let day = String(format: "%02d", challenge.day)
+
+      let timing1 = await run(part: challenge.part1, named: "Day \(day).1")
+      let timing2 = await run(part: challenge.part2, named: "Day \(day).2")
+      print("-")
+
+      totalTime += timing1 + timing2
 
       if benchmark {
-        print("Part 1 took \(timing1), part 2 took \(timing2).")
         #if DEBUG
           print("Looks like you're benchmarking debug code. Try swift run -c release")
         #endif
       }
     }
+
+    print("Total: \(totalTime.formatted(.units(allowed: [.seconds], width: .abbreviated, fractionalPart: .show(length: 4))))")
   }
 }

@@ -49,7 +49,8 @@ struct Day02: AdventDay {
       for n in startNumber...endNumber {
         let numberString = String(n)
         // Substring pattern check with double string overlap
-        let s = (numberString + numberString).dropFirst().dropLast()
+        let doubled = numberString + numberString
+        let s = doubled[doubled.index(after: doubled.startIndex)..<doubled.index(before: doubled.endIndex)]
         if s.contains(numberString) {
           invalidNumbersSum += n
         }
