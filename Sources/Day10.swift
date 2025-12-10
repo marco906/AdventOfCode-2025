@@ -1,102 +1,118 @@
 struct Day10: AdventDay {
   init(data: String) {
-    self.map = data.split(separator: "\n").map { $0.map { Int(String($0)) ?? 0 } }
-    numRows = map.count
-    numCols = map[0].count
+    self.machines = data.split(separator: "\n").map { Machine(String($0)) }
   }
   
-  var map: [[Int]] = []
-  var numRows: Int
-  var numCols: Int
+  var machines: [Machine] = []
 
-  var directions: [[Int]] = [[0,1], [0, -1], [1, 0], [-1,0]]
-  var trailMemory = [Position:Int]()
-
-  struct Position: Hashable {
-    var x: Int
-    var y: Int
-  }
-
-  func isInBounds(_ position: Position) -> Bool {
-    guard position.x >= 0 && position.y >= 0 else { return false }
-    guard position.x < numCols && position.y < numRows else { return false }
-    return true
-  }
-  
-  func isSummit(_ position: Position) -> Bool {
-    return map[position.y][position.x] == 9
-  }
-
-  func hike(pos: Position, summits: inout Set<Position>) {
-    if isSummit(pos) {
-      summits.insert(pos)
-      return
+  struct Machine: Hashable {
+    var lights: [Int]
+    var buttons: [[Int]]
+    var joltages: [Int]
+    init(_ instruction: String) {
+      let components = instruction.components(separatedBy: " ")
+      self.lights = components[0].dropFirst().dropLast().map { $0 == "#" ? 1 : -1 }
+      self.buttons = components.dropFirst().dropLast().map { $0.dropFirst().dropLast().components(separatedBy: ",").map { Int($0)! } }
+      self.joltages = components.last!.dropFirst().dropLast().components(separatedBy: ",").map { Int($0)! }
     }
-
-    for dir in directions {
-      let newPos = Position(x: pos.x + dir[0], y: pos.y + dir[1])
-      guard isInBounds(newPos), map[newPos.y][newPos.x] == map[pos.y][pos.x] + 1 else {
-        continue
-      }
-      hike(pos: newPos, summits: &summits)
-    }
-  }
-  
-  func hike(pos: Position, trails: inout Int, memory: inout [Position:Int]) {
-    if isSummit(pos) {
-      trails += 1
-      return
-    }
-    
-    let trailsBefore = trails
-    if let memorized = memory[pos] {
-      trails += memorized
-      return
-    }
-
-    for dir in directions {
-      let newPos = Position(x: pos.x + dir[0], y: pos.y + dir[1])
-      guard isInBounds(newPos), map[newPos.y][newPos.x] == map[pos.y][pos.x] + 1 else {
-        continue
-      }
-      hike(pos: newPos, trails: &trails, memory: &memory)
-    }
-
-    memory[pos] = trails - trailsBefore
   }
 
   func part1() async -> Any {
-    var res = 0
-
-    for y in 0..<map.count {
-      for x in 0..<map[y].count {
-        let value = map[y][x]
-        if value == 0 {
-          var summits: Set<Position> = []
-          hike(pos: Position(x: x, y: y), summits: &summits)
-          res += summits.count
+    var totalMinPushes = 0
+    
+    for machine in machines {
+      let numLights = machine.lights.count
+      let numButtons = machine.buttons.count
+      
+      var minPushes = Int.max
+      
+      for combo in 0..<(1 << numButtons) {
+        var currentState = [Int](repeating: -1, count: numLights)
+        var pushCount = 0
+        
+        for buttonIdx in 0..<numButtons {
+          if (combo >> buttonIdx) & 1 == 1 {
+            pushCount += 1
+            // Toggle each light this button affects
+            for lightIdx in machine.buttons[buttonIdx] {
+              currentState[lightIdx] *= -1
+            }
+          }
+        }
+        
+        // Check if we reached target configuration
+        if currentState == machine.lights {
+          minPushes = min(minPushes, pushCount)
         }
       }
+      
+      if minPushes != Int.max {
+        totalMinPushes += minPushes
+      }
     }
-
-    return res
+    
+    return totalMinPushes
   }
   
+  // bfs too slow!
   func part2() async -> Any {
-    var res = 0
-    var memory = [Position:Int]()
-
-    for y in 0..<map.count {
-      for x in 0..<map[y].count {
-        let value = map[y][x]
-        if value == 0 {
-          var trails = 0
-          hike(pos: Position(x: x, y: y), trails: &trails, memory: &memory)
-          res += trails
+    var totalMinPushes = 0
+    var machineNumber = 0
+    
+    for machine in machines {
+      print(machine)
+      machineNumber += 1
+      let numIndices = machine.joltages.count
+      
+      var visited: [[Int]: Int] = [:] // diff state -> min pushes to reach it
+      var queue: [([Int], Int)] = [] 
+      
+      let startDiff = machine.joltages
+      queue.append((startDiff, 0))
+      visited[startDiff] = 0
+      
+      var minPushes = Int.max
+      
+      while !queue.isEmpty {
+        let (currentDiff, pushes) = queue.removeFirst()
+        
+        if currentDiff.allSatisfy({ $0 == 0 }) {
+          minPushes = pushes
+          break
+        }
+        
+        if pushes >= minPushes { continue }
+        
+        if currentDiff.contains(where: { $0 < 0 }) { continue }
+        
+        // prioritize buttons that zero out at least one index
+        let candidates = machine.buttons.sorted { buttonA, buttonB in
+          let zerosA = buttonA.filter { idx in idx < numIndices && currentDiff[idx] == 1 }.count
+          let zerosB = buttonB.filter { idx in idx < numIndices && currentDiff[idx] == 1 }.count
+          return zerosA > zerosB
+        }
+        
+        for button in candidates {
+          var newDiff = currentDiff
+          for idx in button {
+            if idx < numIndices {
+              newDiff[idx] -= 1
+            }
+          }
+          
+          let newPushes = pushes + 1
+          if visited[newDiff] == nil || visited[newDiff]! > newPushes {
+            visited[newDiff] = newPushes
+            queue.append((newDiff, newPushes))
+          }
         }
       }
+      
+      if minPushes != Int.max {
+        totalMinPushes += minPushes
+      }
     }
-
-    return res
+    
+    return totalMinPushes
   }
 }
