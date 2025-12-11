@@ -1,48 +1,108 @@
 struct Day11: AdventDay {
   init(data: String) {
-    self.stones = data.split(separator: " ").map { Int(String($0)) ?? 0 }
+    self.rack = data.split(separator: "\n").map { String($0) }
   }
-  
-  var stones: [Int] = []
 
-  func blink(stone: Int, count: Int, memory: inout [Int:[Int:Int]]) -> Int {
-    if count == 0 {
-      return 1
+  var rack: [String] = []
+
+  class Device {
+    var id: String
+    var outputs: [Device] = []
+
+    init(id: String) {
+      self.id = id
     }
+  }
 
-    if let memorized = memory[stone, default: [:]][count] {
-      return memorized
-    }
-
-    var newStones = [Int]()
-
-    if stone == 0 {
-      newStones = [1]
-    } else {
-      let str = String(stone)
-      if str.count % 2 == 0 {
-        let mid = str.index(str.startIndex, offsetBy: str.count / 2)
-        let left = String(str[..<mid])
-        let right = String(str[mid...])
-        newStones = [Int(left) ?? 0, Int(right) ?? 0]
-      } else {
-        newStones = [stone * 2024]
+  func buildGraphAndGetStartDevice(id: String) -> Device? {
+    var deviceMap: [String: Device] = [:]
+    for line in rack {
+      let components = line.components(separatedBy: ": ")
+      let id = components[0]
+      let outputIds = components[1].components(separatedBy: " ")
+      
+      // Get or create the device
+      let device = deviceMap[id] ?? Device(id: id)
+      deviceMap[id] = device
+      
+      // Link to outputs
+      for outputId in outputIds {
+        let outputDevice = deviceMap[outputId] ?? Device(id: outputId)
+        deviceMap[outputId] = outputDevice
+        device.outputs.append(outputDevice)
       }
     }
-
-    let res = newStones.reduce(0) { $0 + blink(stone: $1, count: count - 1, memory: &memory) }
-    memory[stone, default: [:]][count] = res
-
-    return res
+    return deviceMap[id]
   }
 
   func part1() async -> Any {
-    var memory = [Int:[Int:Int]]()
-    return stones.reduce(0) { $0 + blink(stone: $1, count: 25, memory: &memory) }
+    let startId = "you"
+    let endId = "out"
+
+    guard let startDevice = buildGraphAndGetStartDevice(id: startId) else {
+      return 0
+    }
+
+    var visited = Set<String>()
+
+    func dfs(device: Device, visited: inout Set<String>) -> Int {
+      if device.id == endId {
+        return 1
+      }
+
+      if visited.contains(device.id) {
+        return 0
+      }
+      visited.insert(device.id)
+      
+      var count = 0
+      for output in device.outputs {
+        count += dfs(device: output, visited: &visited)
+      }
+      
+      // backtrack
+      visited.remove(device.id)
+      return count
+    }
+
+    return dfs(device: startDevice, visited: &visited)
   }
   
   func part2() async -> Any {
-    var memory = [Int:[Int:Int]]()
-    return stones.reduce(0) { $0 + blink(stone: $1, count: 75, memory: &memory) }
+    let startId = "svr"
+    let endId = "out"
+    let mandatory = Set(["dac", "fft"])
+
+    guard let startDevice = buildGraphAndGetStartDevice(id: startId) else {
+      return 0
+    }
+
+    // store number of paths from device to out that visit remaining mandatory nodes
+    var cache: [String: [Set<String>: Int]] = [:]
+
+    func dfs(device: Device, seen: Set<String>) -> Int {
+      var seen = seen
+      if mandatory.contains(device.id) {
+        seen.insert(device.id)
+      }
+      
+      if device.id == endId {
+        return seen == mandatory ? 1 : 0
+      }
+      
+      if let cached = cache[device.id]?[seen] {
+        return cached
+      }
+      
+      var count = 0
+      for output in device.outputs {
+        count += dfs(device: output, seen: seen)
+      }
+      
+      cache[device.id, default: [:]][seen] = count
+      return count
+    }
+
+    return dfs(device: startDevice, seen: Set())
   }
 }
