@@ -7,10 +7,10 @@ struct Day09Tests {
   let testData = """
     7,1
     11,1
-    11,7
-    9,7
-    9,5
-    2,5
+    11,10
+    9,10
+    9,6
+    2,6
     2,3
     7,3
     """
@@ -24,6 +24,6 @@ struct Day09Tests {
   @Test
   func testPart2() async throws {
     let challenge = Day09(data: testData)
-    await #expect(String(describing: challenge.part2()) == "24")
+    await #expect(String(describing: challenge.part2()) == "32")
   }
 }
