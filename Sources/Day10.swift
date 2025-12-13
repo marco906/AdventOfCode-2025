@@ -19,7 +19,6 @@ struct Day10: AdventDay {
       self.joltages = components.last!.dropFirst().dropLast().components(separatedBy: ",").map { Int($0)! }
     }
     
-    /// Find minimum button presses to reach light configuration (each button pressed 0 or 1 time)
     func minPressesForLights() -> Int {
       var minPushes = Int.max
       
@@ -44,7 +43,10 @@ struct Day10: AdventDay {
       return minPushes == Int.max ? 0 : minPushes
     }
     
-    /// Bit-packed MITM solution with greedy bound pruning for minimum button presses
+    // Hybird native solution
+    // Try a cyclic greedy search first with limited iterations
+    // If fails, fall back to a Meet in the Middle solution with Bit-packed state to improve performance
+    // While this can solve most cases, it still takes too long for complex ones like machine 10. Since I found no working ILP solver lib in Swift, see Day10.py for working python solution.
     func minPressesForJoltages() -> Int {
       let target = joltages
       let n = target.count
@@ -89,7 +91,7 @@ struct Day10: AdventDay {
       let targetPacked = pack(target)
 
       // Greedy upper bound: iteratively pick best button until solved or limit reached
-      func greedyUpperBound() -> Int {
+      func greedySearch() -> Int? {
         var current = [Int](repeating: 0, count: n)
         var presses = 0
         let iterationLimit = 1000
@@ -142,18 +144,13 @@ struct Day10: AdventDay {
           presses += 1
         }
 
-        return current == target ? presses : Int.max
+        return current == target ? presses : nil
       }
 
       // Try greedy first - if it finds a solution, use it and skip MITM
-      let greedyResult = greedyUpperBound()
-      if greedyResult != Int.max {
-        print("Greedy solution found: \(greedyResult)")
+      if let greedyResult = greedySearch() {
         return greedyResult
       }
-
-      // Greedy failed, run MITM to find optimal solution
-      print("Greedy solution not found, running MITM...")
 
       // Max presses per button (bounded by min target value it affects)
       let maxPresses: [Int] = buttons.map { button in
@@ -172,21 +169,7 @@ struct Day10: AdventDay {
         return s
       }
 
-      // Balanced split using log-product heuristic
-      func findBalancedSplit() -> Int {
-        let count = sortedButtons.count
-        if count <= 2 { return count / 2 }
-        let logCosts = sortedMaxPresses.map { log(Double($0 + 1)) }
-        let totalLog = logCosts.reduce(0, +)
-        var cumLog = 0.0
-        for i in 0..<count {
-          cumLog += logCosts[i]
-          if cumLog >= totalLog / 2 { return max(1, min(count - 1, i + 1)) }
-        }
-        return count / 2
-      }
-
-      let mid = findBalancedSplit()
+      let mid = sortedButtons.count / 2
 
       // Check if state exceeds target
       func exceedsTarget(_ state: PackedState) -> Bool {
